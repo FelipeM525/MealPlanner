@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: MealPlanner
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meal-planner?currentSchema=public
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    root: info
+    com.mealplanner: debug
+
+api:
+  security:
+    token:
+      secret: my-secret

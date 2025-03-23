@@ -22,6 +22,11 @@ public class User implements UserDetails {
     private String name;
     private String email;
     private String password;
+    @Enumerated(value = EnumType.STRING)
+    private Gender gender;
+    @Enumerated(value = EnumType.STRING)
+    private ActivityLevel activityLevel;
+    private Integer age;
     private Double weight;
     private Double height;
     private Double metabolicRate;

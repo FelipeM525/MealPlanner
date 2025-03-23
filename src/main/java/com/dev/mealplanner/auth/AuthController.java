@@ -14,7 +14,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @GetMapping("token")
     public ResponseEntity<String> login(@RequestBody() LoginTO to) {

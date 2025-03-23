@@ -1,10 +1,7 @@
 package com.dev.mealplanner.user.service;
 
 import com.dev.mealplanner.auth.TokenService;
-import com.dev.mealplanner.user.domain.LoginTO;
-import com.dev.mealplanner.user.domain.RegisterTO;
-import com.dev.mealplanner.user.domain.User;
-import com.dev.mealplanner.user.domain.UserMapper;
+import com.dev.mealplanner.user.domain.*;
 import com.dev.mealplanner.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,26 +17,32 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private UserMapper userMapper;
+    private final UserMapper userMapper;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
     public Map<String, String> register(RegisterTO to) {
         boolean userExists = userRepository.findUserByEmail(to.email()).isPresent();
 
         if (userExists) throw new RuntimeException("User already exists!");
 
-        User user = new User();
-        user.setName(to.name());
-        user.setEmail(to.email());
-        user.setPassword(passwordEncoder.encode(to.password()));
+        User user = User.builder()
+                .name(to.name())
+                .email(to.email())
+                .weight(to.weight())
+                .height(to.height())
+                .age(to.age())
+                .gender(to.gender())
+                .activityLevel(to.activityLevel())
+                .password(passwordEncoder.encode(to.password())).build();
 
+        user.setMetabolicRate(calculateBmr(user));
         userRepository.save(user);
 
         return Map.of("status", "User created successfully!");
@@ -62,5 +65,35 @@ public class UserService {
         userRepository.save(user);
 
         return Map.of("status", "password changed successfully!");
+    }
+
+    public UserTO getUserInfo() {
+      User currentUser = userRepository.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new RuntimeException("User not Found!"));
+      return userMapper.sourceToDto(currentUser);
+    }
+
+    public Double calculateBmr(User user) {
+        double bmr = 0.0;
+
+        if (user.getGender() == Gender.MALE) {
+            bmr = (user.getWeight() * 10) + (user.getHeight() * 6.25) - (user.getAge() * 5) + 5;
+        }
+
+        if (user.getGender() == Gender.FEMALE) {
+            bmr = (user.getWeight() * 10) + (user.getHeight() * 6.25) - (user.getAge() * 5) - 161;
+        }
+
+        return bmr * getActivityFactor(user.getActivityLevel());
+    }
+
+    public Double getActivityFactor(ActivityLevel activityLevel) {
+
+        return switch(activityLevel) {
+            case SEDENTARY -> 1.2;
+            case LIGHTLY -> 1.375;
+            case MODERATELY -> 1.55;
+            case VERY_ACTIVE -> 1.725;
+            case SUPER_ACTIVE -> 1.9;
+        };
     }
 }
